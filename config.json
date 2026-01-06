@@ -1,0 +1,17 @@
+{
+  "sensor_ip": "10.10.10.2",
+  "sensor_port": 502,
+  "address": 0,
+  "axis_device_ids": [
+    1,
+    2,
+    3
+  ],
+  "timeout_s": 1.0,
+  "force_range_n": 20.0,
+  "counts_full_scale": 32768.0,
+  "poll_interval_ms": 0.05,
+  "poll_hz": 1000.0,
+  "language": "zh",
+  "n_per_count": 0.0006103515625
+}
