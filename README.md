@@ -2,18 +2,26 @@
 
 ## Environment
 
-Use your conda env `arizon_force_sensor`.
+Use conda to manage the env:
 
-## Install (once)
+- `conda create -n arizon_force_sensor python=3.10`
+- `conda activate arizon_force_sensor`
 
-- `pip install pymodbus PySide6 pyqtgraph`
+## Install
+
+- `pip install -r requirements.txt`
 
 ## Run
 
 - `python D:\APP\ARIZON_Force_sensor\qt_app.py`
+- `python D:\APP\ARIZON_Force_sensor\six_axis_force_sensor.py`
 
-## Config
+## six_axis_force_sensor 用法
 
-- Uses `D:\APP\ARIZON_Force_sensor\config.json`
-- `量程 (±N)` is converted to `n_per_count = range / 32768`
+示例已放在 `six_axis_force_sensor.py` 的 `__main__` 中，命令行直接执行即可。
 
+常用操作：
+
+- `get_wrench()` / `get_forces()`：读取力（Fx/Fy/Fz）
+- `bias()`：软件清零（后续读取自动减去偏置）
+- `unbias()`：清除偏置

@@ -220,6 +220,6 @@ if __name__ == "__main__":
 	sensor = SixAxisForceSensor("10.10.10.2", address=0, axis_device_ids=(1, 2, 3))
 	sensor.connect()
 	while True:
-		fx, fy, fz, tx, ty, tz = sensor.get_force_torque(unbiased=False)
-		print(f"Fx={fx:.3f}N, Fy={fy:.3f}N, Fz={fz:.3f}N, Tx={tx:.3f}, Ty={ty:.3f}, Tz={tz:.3f}")
+		fx, fy, fz = sensor.get_forces(unbiased=False)
+		print(f"Fx={fx:.3f}N, Fy={fy:.3f}N, Fz={fz:.3f}N")
 		time.sleep(0.02)
