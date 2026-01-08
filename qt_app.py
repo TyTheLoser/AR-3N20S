@@ -30,6 +30,8 @@ class UiText:
 	clear: str
 	save: str
 	test: str
+	start_record: str
+	stop_record: str
 	labels_sensor_ip: str
 	labels_port: str
 	labels_axis_ids: str
@@ -55,6 +57,8 @@ I18N = {
 		clear="清除",
 		save="保存",
 		test="",
+		start_record="开始记录",
+		stop_record="结束记录",
 		labels_sensor_ip="传感器 IP",
 		labels_port="端口",
 		labels_axis_ids="轴设备 ID",
@@ -78,6 +82,8 @@ I18N = {
 		clear="Clear",
 		save="Save",
 		test="",
+		start_record="Start Record",
+		stop_record="Stop Record",
 		labels_sensor_ip="Sensor IP",
 		labels_port="Port",
 		labels_axis_ids="Axis IDs",
@@ -172,6 +178,10 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.controller = SensorController(self.cfg)
 		self.controller.updated.connect(self.on_sensor_update)
 		self.controller.bias_updated.connect(self.on_bias_update)
+
+		self.recording = False
+		self.record_start_time = 0.0
+		self.record_data: List[Tuple[float, float, float, float]] = []
 
 		self._build_ui()
 		self._apply_styles()
@@ -276,6 +286,15 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.btnClear.clicked.connect(self.controller.clear)
 		actions.addWidget(self.btnTare)
 		actions.addWidget(self.btnClear)
+		self.btnRecordStart = QtWidgets.QPushButton()
+		self.btnRecordStart.setObjectName("btnPrimary")
+		self.btnRecordStop = QtWidgets.QPushButton()
+		self.btnRecordStop.setObjectName("btnGhost")
+		self.btnRecordStart.clicked.connect(self.start_record)
+		self.btnRecordStop.clicked.connect(self.stop_record)
+		self.btnRecordStop.setEnabled(False)
+		actions.addWidget(self.btnRecordStart)
+		actions.addWidget(self.btnRecordStop)
 		ml.addLayout(actions)
 		ml.addStretch(1)
 		self.panelStack.addWidget(monitorPage)
@@ -568,6 +587,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.ipLabel.setText(f"{self.t.ip}:")
 		self.btnTare.setText(self.t.tare)
 		self.btnClear.setText(self.t.clear)
+		self.btnRecordStart.setText(self.t.start_record)
+		self.btnRecordStop.setText(self.t.stop_record)
 		self.btnSave.setText(self.t.save)
 		self.lblIp.setText(self.t.labels_sensor_ip)
 		self.lblPort.setText(self.t.labels_port)
@@ -663,6 +684,10 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.fyVal["val"].setText(f"{fy:+.2f}")
 		self.fzVal["val"].setText(f"{fz:+.2f}")
 
+		if self.recording:
+			t_rel = time.monotonic() - self.record_start_time
+			self.record_data.append((t_rel, fx, fy, fz))
+
 		self.y_fx = self.y_fx[1:] + [fx]
 		self.y_fy = self.y_fy[1:] + [fy]
 		self.y_fz = self.y_fz[1:] + [fz]
@@ -683,6 +708,36 @@ class MainWindow(QtWidgets.QMainWindow):
 		fx, fy, fz, *_ = bias6
 		if self.panelStack.currentIndex() == 0:
 			self.panelFooter.setText(f"{self.t.bias}: {fx:.3f}, {fy:.3f}, {fz:.3f}")
+
+	def start_record(self) -> None:
+		self.recording = True
+		self.record_start_time = time.monotonic()
+		self.record_data.clear()
+		self.btnRecordStart.setEnabled(False)
+		self.btnRecordStop.setEnabled(True)
+		self.statusVal.setText("记录中..." if self.lang == "zh" else "Recording...")
+
+	def stop_record(self) -> None:
+		if not self.recording:
+			return
+		self.recording = False
+		self.btnRecordStart.setEnabled(True)
+		self.btnRecordStop.setEnabled(False)
+
+		if not self.record_data:
+			self.statusVal.setText("无记录数据" if self.lang == "zh" else "No data")
+			return
+
+		try:
+			import pandas as pd
+
+			df = pd.DataFrame(self.record_data, columns=["time_s", "Fx_N", "Fy_N", "Fz_N"])
+			filename = time.strftime("Record_%Y%m%d_%H%M%S.xlsx")
+			df.to_excel(filename, index=False)
+			self.statusVal.setText(f"已保存 {filename}" if self.lang == "zh" else f"Saved {filename}")
+		except Exception as e:
+			self.statusVal.setText(str(e))
+			QtWidgets.QMessageBox.warning(self, "Error", str(e))
 
 
 def main() -> int:
